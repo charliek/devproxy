@@ -61,7 +61,16 @@ class HostsService:
             hosts_file: Path to the hosts file.
             domain: Base domain for service hostnames.
             services: Mapping of service names to (host, port) tuples.
+
+        Raises:
+            HostsFileError: If the hosts file path is invalid.
         """
+        # Validate hosts file path to prevent writing to unintended locations
+        if hosts_file.name != "hosts":
+            raise HostsFileError(
+                f"Invalid hosts file path: {hosts_file}. "
+                "Path must point to a file named 'hosts'."
+            )
         self.hosts_file = hosts_file
         self.domain = domain
         self.services = services
@@ -117,6 +126,9 @@ class HostsService:
 
         Returns:
             Tuple of (start_index, end_index), either can be None if not found.
+
+        Raises:
+            HostsFileError: If the hosts file has unpaired markers (corrupted).
         """
         start_idx = None
         end_idx = None
@@ -127,6 +139,14 @@ class HostsService:
             elif line.strip() == END_MARKER:
                 end_idx = i
                 break
+
+        # Validate markers are paired
+        if start_idx is not None and end_idx is None:
+            raise HostsFileError(
+                f"Corrupted hosts file: found BEGIN marker at line {start_idx + 1} "
+                "but no END marker. Please manually fix the file by adding "
+                f"'{END_MARKER}' or removing the incomplete block."
+            )
 
         return start_idx, end_idx
 

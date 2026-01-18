@@ -14,6 +14,7 @@ from rich.table import Table
 from devproxy import __version__
 from devproxy.addons.router import RequestRecord
 from devproxy.config.settings import generate_default_config, load_settings
+from devproxy.models.config import CertsConfig
 from devproxy.services.cert_service import (
     CertificateError,
     CertService,
@@ -485,10 +486,7 @@ def version() -> None:
     console.print(f"devproxy [bold]{__version__}[/bold]")
 
     # Show mkcert version if available
-    from devproxy.services.cert_service import CertService
-    from devproxy.models.config import CertsConfig
-
-    cert_service = CertService(CertsConfig(), "")
+    cert_service = CertService(CertsConfig(), "placeholder.local")
     mkcert_version = cert_service.get_mkcert_version()
     if mkcert_version:
         console.print(f"mkcert  [bold]{mkcert_version}[/bold]")

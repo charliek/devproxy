@@ -1,9 +1,15 @@
 """Pydantic models for devproxy configuration."""
 
+import re
 from pathlib import Path
 from typing import Annotated
 
 from pydantic import BaseModel, Field, field_validator, model_validator
+
+# Domain name validation pattern (RFC 1123 compliant)
+DOMAIN_PATTERN = re.compile(
+    r"^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?)*$"
+)
 
 
 class ServiceConfig(BaseModel):
@@ -146,11 +152,21 @@ class DevProxyConfig(BaseModel):
     @field_validator("domain", mode="before")
     @classmethod
     def validate_domain(cls, v: str) -> str:
-        """Validate and clean domain."""
+        """Validate and clean domain name.
+
+        Ensures the domain contains only valid characters to prevent
+        command injection when passed to external tools like mkcert.
+        """
         if not v or not v.strip():
             return "local.stridelabs.ai"
         # Remove any leading/trailing dots and whitespace
-        return v.strip().strip(".")
+        cleaned = v.strip().strip(".")
+        if not DOMAIN_PATTERN.match(cleaned):
+            raise ValueError(
+                f"Invalid domain name: {cleaned!r}. "
+                "Domain must contain only alphanumeric characters, hyphens, and dots."
+            )
+        return cleaned
 
     def get_service_urls(self) -> dict[str, str]:
         """Get mapping of service names to their full URLs."""

@@ -59,6 +59,8 @@ class RouterAddon:
 
         # Track request start times for duration calculation
         self._request_times: dict[str, float] = {}
+        # Limit tracked requests to prevent memory leak from orphaned entries
+        self._max_tracked_requests = 10000
 
     def _extract_subdomain(self, hostname: str) -> str | None:
         """Extract the subdomain from a hostname.
@@ -87,6 +89,13 @@ class RouterAddon:
 
         This is called by mitmproxy for each incoming request.
         """
+        # Cleanup old entries if dict grows too large (prevents memory leak)
+        if len(self._request_times) > self._max_tracked_requests:
+            cutoff = time.time() - 300  # Remove entries older than 5 minutes
+            self._request_times = {
+                k: v for k, v in self._request_times.items() if v > cutoff
+            }
+
         # Record start time
         self._request_times[self._get_flow_id(flow)] = time.time()
 
