@@ -68,8 +68,7 @@ class HostsService:
         # Validate hosts file path to prevent writing to unintended locations
         if hosts_file.name != "hosts":
             raise HostsFileError(
-                f"Invalid hosts file path: {hosts_file}. "
-                "Path must point to a file named 'hosts'."
+                f"Invalid hosts file path: {hosts_file}. Path must point to a file named 'hosts'."
             )
         self.hosts_file = hosts_file
         self.domain = domain
@@ -89,9 +88,7 @@ class HostsService:
                 return []
             return self.hosts_file.read_text().splitlines()
         except PermissionError as e:
-            raise HostsFileError(
-                f"Cannot read {self.hosts_file}: Permission denied"
-            ) from e
+            raise HostsFileError(f"Cannot read {self.hosts_file}: Permission denied") from e
         except OSError as e:
             raise HostsFileError(f"Cannot read {self.hosts_file}: {e}") from e
 
@@ -259,7 +256,7 @@ class HostsService:
             new_lines = lines[:start_idx] + managed_block + lines[end_idx + 1 :]
         elif start_idx is not None:
             # Partial block found - remove and append new
-            new_lines = [l for l in lines if l.strip() != BEGIN_MARKER]
+            new_lines = [line for line in lines if line.strip() != BEGIN_MARKER]
             new_lines.extend(["", *managed_block])
         else:
             # No existing block - append

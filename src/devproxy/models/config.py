@@ -2,7 +2,7 @@
 
 import re
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Any, cast
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
@@ -144,7 +144,7 @@ class DevProxyConfig(BaseModel):
                 result[name] = config
             elif isinstance(config, dict):
                 # Extended syntax: dict with port, host, enabled
-                result[name] = ServiceConfig(**config)
+                result[name] = ServiceConfig(**cast(dict[str, Any], config))
             else:
                 raise ValueError(f"Invalid service config for '{name}': {config}")
         return result

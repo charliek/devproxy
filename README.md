@@ -185,6 +185,41 @@ See [docs/troubleshooting.md](docs/troubleshooting.md) for common issues:
 - Connection refused errors
 - Cookie/session problems
 
+## Development
+
+### Setup
+
+```bash
+# Clone the repository
+git clone https://github.com/charliek/devproxy.git
+cd devproxy
+
+# Install dev dependencies
+uv sync --extra dev
+
+# Install pre-commit hooks
+uv run pre-commit install
+```
+
+### Linting
+
+```bash
+# Run all linting checks
+uv run ruff check .
+uv run ruff format --check .
+uv run pyrefly check
+
+# Auto-fix issues
+uv run ruff check --fix .
+uv run ruff format .
+```
+
+### Testing
+
+```bash
+uv run pytest
+```
+
 ## How It Works
 
 ```

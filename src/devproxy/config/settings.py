@@ -101,7 +101,7 @@ def _load_yaml_file(path: Path) -> dict[str, Any]:
     if not path.exists():
         return {}
 
-    with open(path, encoding="utf-8") as f:
+    with path.open(encoding="utf-8") as f:
         data = yaml.safe_load(f)
 
     return data if data else {}

@@ -2,20 +2,17 @@
 
 from pathlib import Path
 from unittest.mock import MagicMock, patch
-import subprocess
 
 import pytest
 
 from devproxy.models.config import CertsConfig
 from devproxy.services.cert_service import (
     CertificateError,
-    CertPaths,
     CertService,
     MkcertNotFoundError,
 )
 from devproxy.services.hosts_service import (
     HostsEntry,
-    HostsFileError,
     HostsService,
 )
 
@@ -63,7 +60,7 @@ class TestCertService:
         """Test certs_exist returns False when no certs."""
         assert cert_service.certs_exist() is False
 
-    def test_certs_exist_true(self, cert_service: CertService, temp_dir: Path) -> None:
+    def test_certs_exist_true(self, cert_service: CertService) -> None:
         """Test certs_exist returns True when certs exist."""
         paths = cert_service._get_cert_paths()
         paths.cert_file.parent.mkdir(parents=True, exist_ok=True)
@@ -73,9 +70,11 @@ class TestCertService:
 
     def test_run_mkcert_not_found(self, cert_service: CertService) -> None:
         """Test MkcertNotFoundError when mkcert missing."""
-        with patch("subprocess.run", side_effect=FileNotFoundError):
-            with pytest.raises(MkcertNotFoundError):
-                cert_service._run_mkcert("-version")
+        with (
+            patch("subprocess.run", side_effect=FileNotFoundError),
+            pytest.raises(MkcertNotFoundError),
+        ):
+            cert_service._run_mkcert("-version")
 
     def test_run_mkcert_failure(self, cert_service: CertService) -> None:
         """Test CertificateError on mkcert failure."""
@@ -86,14 +85,16 @@ class TestCertService:
 
     def test_get_cert_info(self, cert_service: CertService) -> None:
         """Test get_cert_info returns status dictionary."""
-        with patch.object(cert_service, "check_mkcert_installed", return_value=True):
-            with patch.object(cert_service, "get_mkcert_version", return_value="v1.4.4"):
-                with patch.object(cert_service, "is_ca_installed", return_value=True):
-                    info = cert_service.get_cert_info()
-                    assert "exists" in info
-                    assert "mkcert_installed" in info
-                    assert info["mkcert_installed"] is True
-                    assert info["mkcert_version"] == "v1.4.4"
+        with (
+            patch.object(cert_service, "check_mkcert_installed", return_value=True),
+            patch.object(cert_service, "get_mkcert_version", return_value="v1.4.4"),
+            patch.object(cert_service, "is_ca_installed", return_value=True),
+        ):
+            info = cert_service.get_cert_info()
+            assert "exists" in info
+            assert "mkcert_installed" in info
+            assert info["mkcert_installed"] is True
+            assert info["mkcert_version"] == "v1.4.4"
 
 
 class TestHostsService:

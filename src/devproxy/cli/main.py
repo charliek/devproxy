@@ -4,7 +4,7 @@ import asyncio
 import signal
 import sys
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Any
 
 import typer
 from rich.console import Console
@@ -79,7 +79,7 @@ def up(
     """Start the development proxy server."""
     try:
         # Load settings with CLI overrides
-        overrides = {}
+        overrides: dict[str, Any] = {}
         if domain:
             overrides["domain"] = domain
         if port:
@@ -125,13 +125,13 @@ def up(
                 _print_success("mkcert CA installed")
             except CertificateError as e:
                 _print_error(f"Failed to install CA: {e}")
-                raise typer.Exit(1)
+                raise typer.Exit(1) from None
 
         try:
             cert_paths = cert_service.ensure_certs()
         except CertificateError as e:
             _print_error(str(e))
-            raise typer.Exit(1)
+            raise typer.Exit(1) from None
 
         # Display startup info
         console.print()
@@ -150,9 +150,7 @@ def up(
         table.add_column("URL", style="green")
         table.add_column("Target", style="yellow")
 
-        port_suffix = (
-            f":{settings.proxy.https_port}" if settings.proxy.https_port != 443 else ""
-        )
+        port_suffix = f":{settings.proxy.https_port}" if settings.proxy.https_port != 443 else ""
 
         for name, svc in settings.get_enabled_services().items():
             url = f"https://{name}.{settings.domain}{port_suffix}"
@@ -186,10 +184,13 @@ def up(
         # Set up signal handlers
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
+        shutdown_task: asyncio.Task[None] | None = None
 
-        def handle_signal(sig: int, frame: object) -> None:
+        def handle_signal(_sig: int, _frame: object) -> None:
+            nonlocal shutdown_task
             console.print("\n[dim]Shutting down...[/dim]")
-            loop.create_task(proxy.shutdown())
+            # Store task reference to prevent garbage collection during signal handling
+            shutdown_task = loop.create_task(proxy.shutdown())
 
         signal.signal(signal.SIGINT, handle_signal)
         signal.signal(signal.SIGTERM, handle_signal)
@@ -205,21 +206,22 @@ def up(
             console.print("[dim]Press Ctrl+C to stop[/dim]")
             console.print()
 
-            # Run the proxy
+            # Run the proxy (master is guaranteed to exist after start())
+            assert proxy._master is not None
             loop.run_until_complete(proxy._run_master(proxy._master))
         except ProxyStartError as e:
             _print_error(str(e))
-            raise typer.Exit(1)
+            raise typer.Exit(1) from None
         finally:
             loop.run_until_complete(proxy.shutdown())
             loop.close()
 
     except MkcertNotFoundError as e:
         _print_error(str(e))
-        raise typer.Exit(1)
+        raise typer.Exit(1) from None
     except FileNotFoundError as e:
         _print_error(f"Configuration file not found: {e}")
-        raise typer.Exit(1)
+        raise typer.Exit(1) from None
 
 
 @app.command()
@@ -259,7 +261,7 @@ def status(
         settings = load_settings(config)
     except FileNotFoundError:
         _print_warning("No configuration file found. Run 'devproxy init' to create one.")
-        raise typer.Exit(0)
+        raise typer.Exit(0) from None
 
     # Configuration panel
     config_info = f"[bold]Domain:[/bold] {settings.domain}"
@@ -305,9 +307,7 @@ def status(
         console.print("[bold yellow]![/bold yellow] Certificates: not generated")
 
     if cert_info["mkcert_installed"]:
-        console.print(
-            f"[bold green]✓[/bold green] mkcert: {cert_info['mkcert_version']}"
-        )
+        console.print(f"[bold green]✓[/bold green] mkcert: {cert_info['mkcert_version']}")
         if cert_info["ca_installed"]:
             console.print("[bold green]✓[/bold green] CA: installed")
         else:
@@ -361,7 +361,7 @@ def certs(
             _print_success("CA installed")
         except CertificateError as e:
             _print_error(f"Failed to install CA: {e}")
-            raise typer.Exit(1)
+            raise typer.Exit(1) from None
 
     console.print()
     if regenerate:
@@ -375,7 +375,7 @@ def certs(
         _print_success(f"Key: {paths.key_file}")
     except CertificateError as e:
         _print_error(str(e))
-        raise typer.Exit(1)
+        raise typer.Exit(1) from None
 
 
 @app.command()
@@ -446,9 +446,7 @@ def hosts(
                 console.print()
                 console.print("[dim]Run without --preview to apply changes[/dim]")
             else:
-                _print_success(
-                    f"Removed {len(change.entries)} entries from {settings.hosts_file}"
-                )
+                _print_success(f"Removed {len(change.entries)} entries from {settings.hosts_file}")
 
         else:
             # Show status
@@ -459,16 +457,20 @@ def hosts(
             )
             console.print()
 
-            if status["current_entries"]:
+            current_entries = status["current_entries"]
+            assert isinstance(current_entries, list)
+            if current_entries:
                 console.print("[bold]Current managed entries:[/bold]")
-                for entry in status["current_entries"]:
+                for entry in current_entries:
                     console.print(f"  {entry}")
             else:
                 console.print("[dim]No managed entries in hosts file[/dim]")
 
             console.print()
             console.print("[bold]Required entries:[/bold]")
-            for entry in status["required_entries"]:
+            required_entries = status["required_entries"]
+            assert isinstance(required_entries, list)
+            for entry in required_entries:
                 console.print(f"  {entry}")
 
             if status["needs_update"]:
@@ -477,7 +479,7 @@ def hosts(
 
     except HostsFileError as e:
         _print_error(str(e))
-        raise typer.Exit(1)
+        raise typer.Exit(1) from None
 
 
 @app.command()

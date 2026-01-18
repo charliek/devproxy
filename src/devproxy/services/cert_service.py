@@ -65,9 +65,7 @@ class CertService:
                 check=False,
             )
             if check and result.returncode != 0:
-                raise CertificateError(
-                    f"mkcert command failed: {result.stderr or result.stdout}"
-                )
+                raise CertificateError(f"mkcert command failed: {result.stderr or result.stdout}")
             return result
         except FileNotFoundError as e:
             raise MkcertNotFoundError(

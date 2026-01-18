@@ -2,8 +2,6 @@
 
 from pathlib import Path
 
-import pytest
-
 from devproxy.config.settings import (
     DevProxySettings,
     generate_default_config,

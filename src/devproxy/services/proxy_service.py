@@ -1,6 +1,7 @@
 """Proxy service that manages mitmproxy lifecycle."""
 
 import asyncio
+import contextlib
 import errno
 from collections.abc import Callable
 from pathlib import Path
@@ -121,10 +122,8 @@ class ProxyService:
         Args:
             master: The master instance to run.
         """
-        try:
+        with contextlib.suppress(asyncio.CancelledError):
             await master.run()
-        except asyncio.CancelledError:
-            pass
 
     async def start(self) -> None:
         """Start the proxy server.
@@ -227,8 +226,6 @@ class ProxyService:
             "web_ui_port": self.proxy_config.web_ui_port,
             "web_ui_host": self.proxy_config.web_ui_host,
             "domain": self.domain,
-            "routes": {
-                name: f"{host}:{port}" for name, (host, port) in self.routes.items()
-            },
+            "routes": {name: f"{host}:{port}" for name, (host, port) in self.routes.items()},
             "cert_file": str(self.cert_file),
         }

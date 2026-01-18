@@ -4,8 +4,7 @@ import time
 from collections.abc import Callable
 from dataclasses import dataclass
 
-from mitmproxy import http
-from mitmproxy.log import ALERT
+from mitmproxy import ctx, http
 
 
 @dataclass
@@ -92,9 +91,7 @@ class RouterAddon:
         # Cleanup old entries if dict grows too large (prevents memory leak)
         if len(self._request_times) > self._max_tracked_requests:
             cutoff = time.time() - 300  # Remove entries older than 5 minutes
-            self._request_times = {
-                k: v for k, v in self._request_times.items() if v > cutoff
-            }
+            self._request_times = {k: v for k, v in self._request_times.items() if v > cutoff}
 
         # Record start time
         self._request_times[self._get_flow_id(flow)] = time.time()
@@ -118,15 +115,13 @@ class RouterAddon:
             flow.metadata["devproxy_target"] = (target_host, target_port)
 
             if self.verbose:
-                ALERT(
-                    f"Routing {subdomain}.{self.domain} -> {target_host}:{target_port}"
-                )
+                ctx.log.alert(f"Routing {subdomain}.{self.domain} -> {target_host}:{target_port}")
         elif subdomain:
             # Subdomain matches our domain pattern but no route configured
             flow.metadata["devproxy_subdomain"] = subdomain
             flow.metadata["devproxy_unrouted"] = True
             if self.verbose:
-                ALERT(f"No route configured for subdomain: {subdomain}")
+                ctx.log.alert(f"No route configured for subdomain: {subdomain}")
 
     def response(self, flow: http.HTTPFlow) -> None:
         """Handle response - log and invoke callback.
@@ -159,7 +154,7 @@ class RouterAddon:
         # Log if verbose
         if self.verbose:
             status = record.status_code or "---"
-            ALERT(f"{record.method} {status} {record.duration_ms:.0f}ms {record.url}")
+            ctx.log.alert(f"{record.method} {status} {record.duration_ms:.0f}ms {record.url}")
 
     def error(self, flow: http.HTTPFlow) -> None:
         """Handle errors in request processing."""
@@ -170,4 +165,4 @@ class RouterAddon:
         error_msg = flow.error.msg if flow.error else "Unknown error"
 
         if self.verbose:
-            ALERT(f"Error for {subdomain}: {error_msg}")
+            ctx.log.alert(f"Error for {subdomain}: {error_msg}")

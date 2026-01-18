@@ -1,13 +1,13 @@
 """Shared test fixtures for devproxy tests."""
 
-from pathlib import Path
-from typing import Generator
 import tempfile
+from collections.abc import Generator
+from pathlib import Path
 
 import pytest
 
-from devproxy.models.config import CertsConfig, DevProxyConfig, ProxyConfig, ServiceConfig
 from devproxy.config.settings import DevProxySettings
+from devproxy.models.config import CertsConfig, DevProxyConfig, ProxyConfig, ServiceConfig
 
 
 @pytest.fixture
@@ -37,7 +37,7 @@ def sample_settings() -> DevProxySettings:
 
 
 @pytest.fixture
-def temp_dir() -> Generator[Path, None, None]:
+def temp_dir() -> Generator[Path]:
     """Create a temporary directory for test files."""
     with tempfile.TemporaryDirectory() as tmpdir:
         yield Path(tmpdir)
@@ -47,11 +47,7 @@ def temp_dir() -> Generator[Path, None, None]:
 def temp_hosts_file(temp_dir: Path) -> Path:
     """Create a temporary hosts file."""
     hosts_file = temp_dir / "hosts"
-    hosts_file.write_text(
-        "# Sample hosts file\n"
-        "127.0.0.1 localhost\n"
-        "::1 localhost\n"
-    )
+    hosts_file.write_text("# Sample hosts file\n127.0.0.1 localhost\n::1 localhost\n")
     return hosts_file
 
 
