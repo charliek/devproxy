@@ -1,0 +1,97 @@
+# =============================================================================
+# devproxy.yaml — Development Proxy Configuration
+# =============================================================================
+# Copy this file to devproxy.yaml and customize for your project.
+# Documentation: https://github.com/charliek/devproxy
+
+# -----------------------------------------------------------------------------
+# Domain Configuration
+# -----------------------------------------------------------------------------
+# Base domain for all services. Services are accessed as subdomains:
+#   app.{domain}, api.{domain}, etc.
+#
+# Option A: Real domain with wildcard DNS (recommended)
+#   Requires: *.local.stridelabs.ai → 127.0.0.1 in DNS
+#   Benefit: No /etc/hosts modification needed
+#
+# Option B: Local domain
+#   Requires: Manual /etc/hosts entries or `devproxy hosts --add`
+
+domain: local.stridelabs.ai
+
+# -----------------------------------------------------------------------------
+# Service Definitions
+# -----------------------------------------------------------------------------
+# Map subdomain names to local ports.
+#
+# Simple syntax (port only):
+#   service_name: port
+#
+# Extended syntax (full configuration):
+#   service_name:
+#     port: 3000
+#     host: localhost      # Target host (default: localhost)
+#     enabled: true        # Enable/disable routing (default: true)
+
+services:
+  # Frontend application
+  # Access at: https://app.local.stridelabs.ai:6789
+  app: 3000
+
+  # Backend API
+  # Access at: https://api.local.stridelabs.ai:6789
+  api: 8000
+
+  # Admin dashboard (extended syntax example)
+  admin:
+    port: 3001
+    host: localhost
+    enabled: true
+
+  # Example: Disabled service (uncomment to enable)
+  # docs:
+  #   port: 4000
+  #   enabled: false
+
+# -----------------------------------------------------------------------------
+# Proxy Settings
+# -----------------------------------------------------------------------------
+proxy:
+  # HTTPS listen port
+  # Default: 6789 (unprivileged, no sudo required)
+  # Use 443 for clean URLs (requires sudo or capabilities)
+  https_port: 6789
+
+  # mitmproxy web UI port (set to null to disable)
+  # Access at http://localhost:8081
+  web_ui_port: 8081
+
+  # Web UI bind address
+  # Use 0.0.0.0 to allow external access (use with caution)
+  web_ui_host: 127.0.0.1
+
+# -----------------------------------------------------------------------------
+# Certificate Settings
+# -----------------------------------------------------------------------------
+certs:
+  # Directory for storing generated certificates
+  cert_dir: ~/.devproxy/certs
+
+  # Automatically generate certificates using mkcert
+  auto_generate: true
+
+  # Custom certificate paths (optional)
+  # If specified, auto_generate is ignored
+  # cert_file: /path/to/wildcard.pem
+  # key_file: /path/to/wildcard-key.pem
+
+# -----------------------------------------------------------------------------
+# Hosts File Management (only needed for local domains without DNS)
+# -----------------------------------------------------------------------------
+# Path to hosts file
+# hosts_file: /etc/hosts
+
+# Automatically update hosts file with service entries
+# Requires sudo/root privileges
+# Not needed when using real domain with wildcard DNS
+# auto_update_hosts: false

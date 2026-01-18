@@ -8,3 +8,25 @@ wheels/
 
 # Virtual environments
 .venv
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# devproxy
+devproxy.yaml
+devproxy.yml
+~/.devproxy/
+*.pem
+*-key.pem
+
+# OS
+.DS_Store
+Thumbs.db
